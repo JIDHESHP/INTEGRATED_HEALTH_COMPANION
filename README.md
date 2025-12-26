@@ -168,15 +168,21 @@ The Smart Wellness Management System is a **user-centric health companion** that
 git clone https://github.com/JIDHESHP/INTEGRATED_HEALTH_COMPANION/
 cd INTEGRATED_HEALTH_COMPANION
 ```
-
 ### Step 2: Run the Application
+
+```bash
+pip install flask flask-jwt-extended
+```
+
+### Step 3: Run the Application
 
 ```bash
 
 python app.py
 ```
 
-### Step 3: Open the Browser
+
+### Step 4: Open the Browser
 
 ```
 http://127.0.0.1:5000
