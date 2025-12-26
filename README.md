@@ -172,6 +172,7 @@ cd INTEGRATED_HEALTH_COMPANION
 
 ```bash
 pip install flask flask-jwt-extended
+pip install flask-cors
 ```
 
 ### Step 3: Run the Application
