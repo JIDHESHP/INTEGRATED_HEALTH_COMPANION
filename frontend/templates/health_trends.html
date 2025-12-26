@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-orange-600 via-red-600 to-pink-600 relative overflow-hidden">
+    <!-- Animated Background -->
+    <div class="absolute inset-0 opacity-20">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.2\'%3E%3Cpath d=\'M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20H0v-2h20v2H0v2h20v2H0v2h20v2H0v2h20v2H0v2h22V20H20zm-2 2h2v2h-2v-2zm0-4h2v2h-2v-2zm0-4h2v2h-2v-2zm0-4h2v2h-2v-2z\'/%3E%3C/g%3E%3C/svg%3E')] animate-pulse"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 relative z-10">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="inline-block p-4 bg-gradient-to-br from-orange-500 to-red-500 rounded-full mb-4">
+                    <i class="fa-solid fa-chart-line text-white text-5xl"></i>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold mb-4 gradient-text">Health Trends 📈</h1>
+                <p class="text-gray-200 text-lg">Track your health metrics over time</p>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="glass-card p-6 text-center">
+                    <div class="text-4xl mb-2">❤️</div>
+                    <h3 class="text-gray-400 text-sm uppercase mb-2">Avg Heart Rate</h3>
+                    <div id="avg-hr" class="text-3xl font-bold text-red-400">--</div>
+                </div>
+                <div class="glass-card p-6 text-center">
+                    <div class="text-4xl mb-2">🩺</div>
+                    <h3 class="text-gray-400 text-sm uppercase mb-2">Avg BP</h3>
+                    <div id="avg-bp" class="text-3xl font-bold text-blue-400">--/--</div>
+                </div>
+                <div class="glass-card p-6 text-center">
+                    <div class="text-4xl mb-2">🩸</div>
+                    <h3 class="text-gray-400 text-sm uppercase mb-2">Avg Blood Sugar</h3>
+                    <div id="avg-sugar" class="text-3xl font-bold text-green-400">--</div>
+                </div>
+                <div class="glass-card p-6 text-center">
+                    <div class="text-4xl mb-2">📊</div>
+                    <h3 class="text-gray-400 text-sm uppercase mb-2">Total Records</h3>
+                    <div id="total-records" class="text-3xl font-bold text-purple-400">--</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="glass-card p-6 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-4">
+                        <i class="fa-solid fa-heart-pulse mr-2 text-red-400"></i>Heart Rate History
+                    </h3>
+                    <canvas id="chart-hr"></canvas>
+                </div>
+                <div class="glass-card p-6 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-4">
+                        <i class="fa-solid fa-tint mr-2 text-blue-400"></i>Blood Pressure History
+                    </h3>
+                    <canvas id="chart-bp"></canvas>
+                </div>
+                <div class="glass-card p-6 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-4">
+                        <i class="fa-solid fa-flask mr-2 text-green-400"></i>Blood Sugar History
+                    </h3>
+                    <canvas id="chart-sugar"></canvas>
+                </div>
+                <div class="glass-card p-6 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-4">
+                        <i class="fa-solid fa-chart-area mr-2 text-purple-400"></i>Combined Overview
+                    </h3>
+                    <canvas id="chart-combined"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Logs Table -->
+            <div class="glass-card p-6 shadow-2xl">
+                <h3 class="text-xl font-bold text-white mb-4">
+                    <i class="fa-solid fa-table mr-2"></i>Recent Logs
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="text-left p-3 text-gray-300">Date</th>
+                                <th class="text-left p-3 text-gray-300">Heart Rate</th>
+                                <th class="text-left p-3 text-gray-300">Blood Pressure</th>
+                                <th class="text-left p-3 text-gray-300">Blood Sugar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-table-body">
+                            <tr>
+                                <td colspan="4" class="text-center p-8 text-gray-400">
+                                    <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
+                                    <p>Loading logs...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const state = {
+    token: localStorage.getItem('token')
+};
+
+if (!state.token) {
+    window.location.href = '/login';
+}
+
+let hrChart, bpChart, sugarChart, combinedChart;
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', () => {
+    fetchHealthLogs();
+});
+
+async function fetchHealthLogs() {
+    try {
+        const res = await fetch('/api/health/logs', {
+            headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        const data = await res.json();
+        updateCharts(data);
+        updateStats(data);
+        updateTable(data);
+    } catch (err) {
+        console.error('Failed to fetch health logs:', err);
+    }
+}
+
+function updateStats(data) {
+    if (data.length === 0) return;
+    
+    const heartRates = data.filter(d => d.heart_rate).map(d => parseInt(d.heart_rate));
+    const bpSys = data.filter(d => d.bp_systolic).map(d => parseInt(d.bp_systolic));
+    const bpDia = data.filter(d => d.bp_diastolic).map(d => parseInt(d.bp_diastolic));
+    const sugars = data.filter(d => d.blood_sugar).map(d => parseInt(d.blood_sugar));
+    
+    if (heartRates.length > 0) {
+        const avg = Math.round(heartRates.reduce((a, b) => a + b, 0) / heartRates.length);
+        document.getElementById('avg-hr').textContent = avg + ' bpm';
+    }
+    
+    if (bpSys.length > 0 && bpDia.length > 0) {
+        const avgSys = Math.round(bpSys.reduce((a, b) => a + b, 0) / bpSys.length);
+        const avgDia = Math.round(bpDia.reduce((a, b) => a + b, 0) / bpDia.length);
+        document.getElementById('avg-bp').textContent = `${avgSys}/${avgDia}`;
+    }
+    
+    if (sugars.length > 0) {
+        const avg = Math.round(sugars.reduce((a, b) => a + b, 0) / sugars.length);
+        document.getElementById('avg-sugar').textContent = avg + ' mg/dL';
+    }
+    
+    document.getElementById('total-records').textContent = data.length;
+}
+
+function updateCharts(data) {
+    const reversedData = [...data].reverse();
+    const labels = reversedData.map(d => {
+        const date = new Date(d.timestamp);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    
+    // Heart Rate Chart
+    const ctxHr = document.getElementById('chart-hr');
+    if (ctxHr) {
+        if (hrChart) hrChart.destroy();
+        hrChart = new Chart(ctxHr, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Heart Rate (bpm)',
+                    data: reversedData.map(d => d.heart_rate),
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: 'white' } }
+                },
+                scales: {
+                    x: { ticks: { color: 'gray' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    y: { ticks: { color: 'gray' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                }
+            }
+        });
+    }
+
+    // Blood Pressure Chart
+    const ctxBp = document.getElementById('chart-bp');
+    if (ctxBp) {
+        if (bpChart) bpChart.destroy();
+        bpChart = new Chart(ctxBp, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Systolic',
+                        data: reversedData.map(d => d.bp_systolic),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Diastolic',
+                        data: reversedData.map(d => d.bp_diastolic),
+                        borderColor: '#60a5fa',
+                        backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: 'white' } }
+                },
+                scales: {
+                    x: { ticks: { color: 'gray' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    y: { ticks: { color: 'gray' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                }
+            }
+        });
+    }
+
+    // Blood Sugar Chart
+    const ctxSugar = document.getElementById('chart-sugar');
+    if (ctxSugar) {
+        if (sugarChart) sugarChart.destroy();
+        sugarChart = new Chart(ctxSugar, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Blood Sugar (mg/dL)',
+                    data: reversedData.map(d => d.blood_sugar),
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: 'white' } }
+                },
+                scales: {
+                    x: { ticks: { color: 'gray' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    y: { ticks: { color: 'gray' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                }
+            }
+        });
+    }
+}
+
+function updateTable(data) {
+    const tbody = document.getElementById('logs-table-body');
+    tbody.innerHTML = '';
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-gray-400">No health logs available</td></tr>';
+        return;
+    }
+    
+    data.slice(0, 10).forEach(log => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-gray-700 hover:bg-gray-800/50 transition';
+        const date = new Date(log.timestamp);
+        tr.innerHTML = `
+            <td class="p-3 text-gray-300">${date.toLocaleDateString()}</td>
+            <td class="p-3 text-gray-300">${log.heart_rate || '--'} bpm</td>
+            <td class="p-3 text-gray-300">${log.bp_systolic || '--'}/${log.bp_diastolic || '--'}</td>
+            <td class="p-3 text-gray-300">${log.blood_sugar || '--'} mg/dL</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+</script>
+{% endblock %}
+

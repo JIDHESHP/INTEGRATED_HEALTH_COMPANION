@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Wellness</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#6366f1', /* Indigo 500 */
+                        secondary: '#ec4899', /* Pink 500 */
+                        accent: '#8b5cf6', /* Violet 500 */
+                        dark: '#0f172a',
+                        'glass-border': 'rgba(255, 255, 255, 0.125)',
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        /* Vibrant Dynamic Background */
+        .bg-vibrant {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: blob 10s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .orb-1 {
+            top: -10%;
+            left: -10%;
+            width: 500px;
+            height: 500px;
+            background: #4f46e5;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            top: 40%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: #ec4899;
+            animation-delay: 2s;
+        }
+
+        .orb-3 {
+            bottom: -10%;
+            left: 20%;
+            width: 600px;
+            height: 600px;
+            background: #8b5cf6;
+            animation-delay: 4s;
+        }
+
+        /* Glassmorphism */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #818cf8, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 80px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            overflow: hidden;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar:hover {
+            width: 280px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            margin: 0.5rem 0.5rem;
+            border-radius: 1rem;
+        }
+
+        .sidebar-item:hover,
+        .sidebar-item.active {
+            color: #ffffff;
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .sidebar-item:hover i,
+        .sidebar-item.active i {
+            color: #818cf8;
+            transform: scale(1.1);
+        }
+
+        .sidebar-item i {
+            width: 24px;
+            text-align: center;
+            margin-right: 1.5rem;
+            font-size: 1.25rem;
+            transition: transform 0.2s;
+        }
+
+        .sidebar-text-container {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .sidebar:hover .sidebar-text-container {
+            opacity: 1;
+            transition-delay: 0.1s;
+        }
+
+        .main-content-with-sidebar {
+            margin-left: 80px;
+            transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar:hover~.main-content-with-sidebar {
+            margin-left: 280px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.4);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+    <!-- Animated Background -->
+    <div class="bg-vibrant">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div id="sidebar" class="sidebar hidden">
+        <div class="p-6 mb-2 flex items-center justify-center border-b border-white/5 h-[80px]">
+            <div class="text-2xl font-bold gradient-text flex items-center">
+                <i class="fa-solid fa-heart-pulse text-indigo-400 mr-0 md:mr-3 text-3xl"></i>
+                <span class="sidebar-text-container font-display tracking-tight">SmartWellness</span>
+            </div>
+        </div>
+
+        <nav class="mt-4 px-2 space-y-2">
+            <a href="/" class="sidebar-item group">
+                <i class="fa-solid fa-home"></i>
+                <div class="sidebar-text-container">
+                    <span class="block font-medium">Dashboard</span>
+                    <span class="text-xs text-slate-400">Overview & Stats</span>
+                </div>
+            </a>
+            <a href="/vitals" class="sidebar-item group">
+                <i class="fa-solid fa-heart-pulse"></i>
+                <div class="sidebar-text-container">
+                    <span class="block font-medium">Vitals Input</span>
+                    <span class="text-xs text-slate-400">Log Health Data</span>
+                </div>
+            </a>
+            <a href="/risk" class="sidebar-item group">
+                <i class="fa-solid fa-shield-heart"></i>
+                <div class="sidebar-text-container">
+                    <span class="block font-medium">Risk Score</span>
+                    <span class="text-xs text-slate-400">AI Assessment</span>
+                </div>
+            </a>
+            <a href="/insights" class="sidebar-item group">
+                <i class="fa-solid fa-brain"></i>
+                <div class="sidebar-text-container">
+                    <span class="block font-medium">AI Insights</span>
+                    <span class="text-xs text-slate-400">Health Analysis</span>
+                </div>
+            </a>
+            <a href="/alerts" class="sidebar-item group">
+                <i class="fa-solid fa-bell"></i>
+                <div class="sidebar-text-container">
+                    <span class="block font-medium">Alerts</span>
+                    <span class="text-xs text-slate-400">Notifications</span>
+                </div>
+            </a>
+            <a href="/health_trends" class="sidebar-item group">
+                <i class="fa-solid fa-chart-line"></i>
+                <div class="sidebar-text-container">
+                    <span class="block font-medium">Health Trends</span>
+                    <span class="text-xs text-slate-400">History & Charts</span>
+                </div>
+            </a>
+            <a href="/medication" class="sidebar-item group">
+                <i class="fa-solid fa-pills"></i>
+                <div class="sidebar-text-container">
+                    <span class="block font-medium">Medication</span>
+                    <span class="text-xs text-slate-400">Pill Tracker</span>
+                </div>
+            </a>
+            <a href="/profile" class="sidebar-item group">
+                <i class="fa-solid fa-user-circle"></i>
+                <div class="sidebar-text-container">
+                    <span class="block font-medium">Profile</span>
+                    <span class="text-xs text-slate-400">Account Details</span>
+                </div>
+            </a>
+            <a href="/settings" class="sidebar-item group">
+                <i class="fa-solid fa-gear"></i>
+                <div class="sidebar-text-container">
+                    <span class="block font-medium">Settings</span>
+                    <span class="text-xs text-slate-400">App Preferences</span>
+                </div>
+            </a>
+
+            <div class="absolute bottom-4 left-0 w-full px-2">
+                <a href="#" onclick="logout()" class="sidebar-item text-red-400 hover:bg-red-500/10">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <div class="sidebar-text-container">
+                        <span class="block font-medium">Logout</span>
+                        <span class="text-xs text-red-300">End Session</span>
+                    </div>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Top Navbar (Unauthenticated) -->
+    <nav id="top-nav" class="glass-nav sticky top-0 z-40 hidden">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold gradient-text flex items-center gap-3">
+                <i class="fa-solid fa-heart-pulse text-indigo-400"></i> SmartWellness
+            </div>
+            <div id="auth-links" class="flex gap-4">
+                <a href="/login"
+                    class="px-6 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium backdrop-blur-sm transition border border-white/10">Login</a>
+                <a href="/register"
+                    class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium shadow-lg shadow-indigo-500/30 transition">Get
+                    Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow main-content-with-sidebar relative z-10" id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        // Sidebar & Auth Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const sidebar = document.getElementById('sidebar');
+            const topNav = document.getElementById('top-nav');
+            const mainContent = document.getElementById('main-content');
+
+            if (token) {
+                if (sidebar) sidebar.classList.remove('hidden');
+                if (topNav) topNav.classList.add('hidden');
+                mainContent.classList.add('main-content-with-sidebar');
+            } else {
+                if (sidebar) sidebar.classList.add('hidden');
+                if (topNav) topNav.classList.remove('hidden');
+                mainContent.classList.remove('main-content-with-sidebar');
+                mainContent.classList.add('pt-20'); // Add padding for fixed top nav
+            }
+
+            // Highlight active link
+            const currentPath = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar-item');
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                    link.style.background = 'rgba(99, 102, 241, 0.15)';
+                    link.querySelector('i').style.color = '#818cf8';
+                }
+            });
+        });
+
+        // Theme Init
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</body>
+
+</html>

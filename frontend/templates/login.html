@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-[80vh] flex items-center justify-center container mx-auto px-4">
+    <div class="glass-card p-8 md:p-12 max-w-lg w-full relative overflow-hidden">
+        <!-- Decoration -->
+        <div class="absolute -top-20 -right-20 w-60 h-60 bg-indigo-500 rounded-full blur-[100px] opacity-20"></div>
+        <div class="absolute -bottom-20 -left-20 w-60 h-60 bg-pink-500 rounded-full blur-[100px] opacity-20"></div>
+
+        <div class="relative z-10">
+            <h2 class="text-3xl font-bold mb-2 text-white text-center">Welcome Back</h2>
+            <p class="text-slate-400 text-center mb-8">Sign in to access your dashboard</p>
+
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label class="block text-slate-300 mb-2 font-medium">Email Address</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                            <i class="fa-solid fa-envelope"></i>
+                        </span>
+                        <input type="email" id="email" name="email" required
+                            class="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition placeholder-slate-600"
+                            placeholder="you@example.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 mb-2 font-medium">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input type="password" id="password" name="password" required
+                            class="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition placeholder-slate-600"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                    <label class="flex items-center text-slate-400 hover:text-white cursor-pointer transition">
+                        <input type="checkbox"
+                            class="mr-2 rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-indigo-500">
+                        Remember me
+                    </label>
+                    <a href="#" class="text-indigo-400 hover:text-indigo-300 transition">Forgot password?</a>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3.5 rounded-xl transition transform hover:scale-[1.02] shadow-lg shadow-indigo-500/25">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="mt-8 text-center text-slate-400">
+                Don't have an account?
+                <a href="/register" class="text-indigo-400 hover:text-indigo-300 font-semibold transition">Register
+                    now</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const btn = e.target.querySelector('button');
+        const originalText = btn.innerHTML;
+
+        // Loading state
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Signing In...';
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                localStorage.setItem('token', data.access_token);
+                // Redirect
+                window.location.href = '/';
+            } else {
+                alert('Login Failed: ' + (data.msg || 'Invalid credentials'));
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Network error occurred');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    });
+</script>
+{% endblock %}

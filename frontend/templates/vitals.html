@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 gradient-text">
+                <i class="fa-solid fa-heart-pulse mr-3"></i>Health Vitals Input
+            </h1>
+            <p class="text-slate-400 text-lg">Track your health metrics seamlessly</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="glass-card p-8 md:p-12 mb-8 shadow-2xl relative overflow-hidden">
+            <!-- Background Accent -->
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500 rounded-full blur-[80px] opacity-20"></div>
+
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-white/5 pb-6">
+                <h2 class="text-2xl font-bold text-white mb-4 md:mb-0">Enter New Vitals</h2>
+                <div class="flex gap-3">
+                    <button id="new-entry-btn" onclick="resetForNewEntry()"
+                        class="px-5 py-2.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 rounded-lg font-medium transition flex items-center">
+                        <i class="fa-solid fa-plus mr-2"></i>New Entry
+                    </button>
+                    <button id="edit-btn" onclick="loadLatestVitals()"
+                        class="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 rounded-lg font-medium transition flex items-center">
+                        <i class="fa-solid fa-pen-to-square mr-2"></i>Edit Last
+                    </button>
+                </div>
+            </div>
+
+            <form id="vitals-form" class="space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Heart Rate -->
+                    <div class="relative group">
+                        <label class="block text-slate-300 mb-3 font-semibold text-sm uppercase tracking-wide">
+                            <i class="fa-solid fa-heart text-rose-500 mr-2"></i>Heart Rate
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="heart-rate" name="heart_rate" min="30" max="220"
+                                class="w-full bg-slate-900/50 border border-white/10 rounded-xl p-4 text-white text-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-inner placeholder-slate-600"
+                                placeholder="e.g. 72">
+                            <span
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium">BPM</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2 pl-1 group-hover:text-indigo-400 transition">Normal range:
+                            60-100 BPM</p>
+                    </div>
+
+                    <!-- Blood Sugar -->
+                    <div class="relative group">
+                        <label class="block text-slate-300 mb-3 font-semibold text-sm uppercase tracking-wide">
+                            <i class="fa-solid fa-cube text-emerald-500 mr-2"></i>Blood Sugar
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="blood-sugar" name="blood_sugar" min="50" max="500"
+                                class="w-full bg-slate-900/50 border border-white/10 rounded-xl p-4 text-white text-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-inner placeholder-slate-600"
+                                placeholder="e.g. 95">
+                            <span
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium">mg/dL</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2 pl-1 group-hover:text-indigo-400 transition">Normal
+                            fasting: 70-100 mg/dL</p>
+                    </div>
+
+                    <!-- Blood Pressure -->
+                    <div class="md:col-span-2">
+                        <label class="block text-slate-300 mb-3 font-semibold text-sm uppercase tracking-wide">
+                            <i class="fa-solid fa-droplet text-blue-500 mr-2"></i>Blood Pressure
+                        </label>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="relative">
+                                <input type="number" id="bp-systolic" name="bp_systolic" min="70" max="250"
+                                    class="w-full bg-slate-900/50 border border-white/10 rounded-xl p-4 text-white text-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-inner placeholder-slate-600"
+                                    placeholder="Systolic (120)">
+                                <p class="text-xs text-slate-500 mt-2 pl-1">Systolic (Top)</p>
+                            </div>
+                            <div class="relative">
+                                <input type="number" id="bp-diastolic" name="bp_diastolic" min="40" max="150"
+                                    class="w-full bg-slate-900/50 border border-white/10 rounded-xl p-4 text-white text-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-inner placeholder-slate-600"
+                                    placeholder="Diastolic (80)">
+                                <p class="text-xs text-slate-500 mt-2 pl-1">Diastolic (Bottom)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-4 pt-6">
+                    <button type="submit"
+                        class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl transition transform hover:scale-[1.02] shadow-lg shadow-indigo-500/25 flex justify-center items-center">
+                        <i class="fa-solid fa-save mr-2"></i>Save Vitals
+                    </button>
+                    <button type="button" onclick="clearForm()"
+                        class="px-8 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold py-4 rounded-xl transition">
+                        Clear
+                    </button>
+                </div>
+            </form>
+
+            <!-- Success Message -->
+            <div id="success-message"
+                class="hidden mt-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl animate-fade-in">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center mr-4">
+                        <i class="fa-solid fa-check text-emerald-400 text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-emerald-300 font-semibold">Saved successfully!</p>
+                        <p class="text-emerald-400/70 text-sm">Your health data has been updated.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Latest Entry Display -->
+        <div id="latest-entry" class="glass-card p-8 hidden opacity-0 transition-opacity duration-300">
+            <h3 class="text-xl font-bold mb-6 text-white flex items-center">
+                <i class="fa-solid fa-clock-rotate-left mr-3 text-slate-400"></i>Latest Recorded Entry
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                    <p class="text-slate-400 text-xs uppercase tracking-wider mb-2">Heart Rate</p>
+                    <p id="latest-hr" class="text-2xl font-bold text-rose-400">--</p>
+                </div>
+                <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                    <p class="text-slate-400 text-xs uppercase tracking-wider mb-2">BP</p>
+                    <p id="latest-bp" class="text-2xl font-bold text-blue-400">--/--</p>
+                </div>
+                <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                    <p class="text-slate-400 text-xs uppercase tracking-wider mb-2">Glucose</p>
+                    <p id="latest-sugar" class="text-2xl font-bold text-emerald-400">--</p>
+                </div>
+                <div class="p-4 rounded-xl bg-white/5 border border-white/5">
+                    <p class="text-slate-400 text-xs uppercase tracking-wider mb-2">Recorded</p>
+                    <p id="latest-date" class="text-lg font-semibold text-slate-300">--</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const state = {
+        token: localStorage.getItem('token')
+    };
+
+    if (!state.token) {
+        window.location.href = '/login';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadLatestEntryDisplayOnly();
+    });
+
+    function resetForNewEntry() {
+        document.getElementById('vitals-form').reset();
+        document.getElementById('success-message').classList.add('hidden');
+        document.getElementById('vitals-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Form submission
+    document.getElementById('vitals-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const heartRate = formData.get('heart_rate');
+        const bpSystolic = formData.get('bp_systolic');
+        const bpDiastolic = formData.get('bp_diastolic');
+        const bloodSugar = formData.get('blood_sugar');
+
+        // Validate
+        if (!heartRate && !bpSystolic && !bpDiastolic && !bloodSugar) {
+            alert('⚠️ Please enter at least one vital sign value.');
+            return;
+        }
+
+        const data = {};
+        if (heartRate) data.heart_rate = parseInt(heartRate);
+        if (bpSystolic) data.bp_systolic = parseInt(bpSystolic);
+        if (bpDiastolic) data.bp_diastolic = parseInt(bpDiastolic);
+        if (bloodSugar) data.blood_sugar = parseInt(bloodSugar);
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Saving...';
+
+        try {
+            const res = await fetch('/api/health/log', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${state.token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            // Improved error handling
+            const text = await res.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (e) {
+                console.error("Non-JSON response:", text);
+                throw new Error(`Server Error (${res.status}): ${text.substring(0, 100)}...`);
+            }
+
+            if (res.ok) {
+                const successMsg = document.getElementById('success-message');
+                successMsg.classList.remove('hidden');
+
+                if (result.alerts && result.alerts.length > 0) {
+                    alert('⚠️ Health Alert:\n' + result.alerts.join('\n'));
+                }
+
+                loadLatestEntryDisplayOnly();
+                setTimeout(() => successMsg.classList.add('hidden'), 5000);
+                document.getElementById('vitals-form').reset();
+
+            } else {
+                alert('❌ ' + (result.msg || 'Failed to save.'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('❌ Error: ' + err.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
+    });
+
+    async function loadLatestVitals() {
+        try {
+            const res = await fetch('/api/health/latest', {
+                headers: { 'Authorization': `Bearer ${state.token}` }
+            });
+            const data = await res.json();
+
+            if (data && (data.heart_rate || data.bp_systolic)) {
+                document.getElementById('heart-rate').value = data.heart_rate || '';
+                document.getElementById('bp-systolic').value = data.bp_systolic || '';
+                document.getElementById('bp-diastolic').value = data.bp_diastolic || '';
+                document.getElementById('blood-sugar').value = data.blood_sugar || '';
+
+                const form = document.getElementById('vitals-form');
+                form.classList.add('ring-2', 'ring-indigo-500', 'p-2', 'rounded-xl');
+                setTimeout(() => form.classList.remove('ring-2', 'ring-indigo-500', 'p-2', 'rounded-xl'), 1000);
+            } else {
+                alert('No previous data found to edit.');
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    async function loadLatestEntryDisplayOnly() {
+        try {
+            const res = await fetch('/api/health/latest', {
+                headers: { 'Authorization': `Bearer ${state.token}` }
+            });
+            const data = await res.json();
+
+            const latestDiv = document.getElementById('latest-entry');
+            if (data && (data.heart_rate || data.bp_systolic)) {
+                latestDiv.classList.remove('hidden');
+                setTimeout(() => latestDiv.classList.remove('opacity-0'), 100);
+
+                document.getElementById('latest-hr').textContent = (data.heart_rate || '--') + ' bpm';
+                document.getElementById('latest-bp').textContent = `${data.bp_systolic || '--'}/${data.bp_diastolic || '--'}`;
+                document.getElementById('latest-sugar').textContent = (data.blood_sugar || '--') + ' mg/dL';
+
+                if (data.updated_at) {
+                    const date = new Date(data.updated_at);
+                    document.getElementById('latest-date').textContent = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    function clearForm() {
+        document.getElementById('vitals-form').reset();
+        document.getElementById('success-message').classList.add('hidden');
+    }
+</script>
+{% endblock %}

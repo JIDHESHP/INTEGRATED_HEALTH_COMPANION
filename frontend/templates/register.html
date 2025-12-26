@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-green-600 via-teal-600 to-cyan-600 relative overflow-hidden">
+    <!-- Animated Background -->
+    <div class="absolute inset-0">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20 animate-pulse"></div>
+    </div>
+
+    <div class="flex justify-center items-center min-h-screen p-4 relative z-10">
+        <div class="glass-card p-8 w-full max-w-md shadow-2xl transform transition-all duration-300 hover:scale-105">
+            <div class="text-center mb-6">
+                <div class="inline-block p-4 bg-gradient-to-br from-green-500 to-teal-500 rounded-full mb-4">
+                    <i class="fa-solid fa-user-plus text-white text-4xl"></i>
+                </div>
+                <h2 class="text-4xl font-bold mb-2 gradient-text">Get Started! 🚀</h2>
+                <p class="text-gray-300">Create your account to begin</p>
+            </div>
+
+            <form id="register-form" class="space-y-6">
+                <div>
+                    <label class="block text-gray-300 mb-2 font-semibold">
+                        <i class="fa-solid fa-user mr-2 text-secondary"></i>Full Name
+                    </label>
+                    <input type="text" id="name"
+                        class="w-full bg-gray-800/50 border-2 border-gray-700 rounded-lg p-4 text-white focus:outline-none focus:border-secondary transition placeholder-gray-500"
+                        placeholder="John Doe" required>
+                </div>
+                <div>
+                    <label class="block text-gray-300 mb-2 font-semibold">
+                        <i class="fa-solid fa-envelope mr-2 text-secondary"></i>Email Address
+                    </label>
+                    <input type="email" id="email"
+                        class="w-full bg-gray-800/50 border-2 border-gray-700 rounded-lg p-4 text-white focus:outline-none focus:border-secondary transition placeholder-gray-500"
+                        placeholder="you@example.com" required>
+                </div>
+                <div>
+                    <label class="block text-gray-300 mb-2 font-semibold">
+                        <i class="fa-solid fa-lock mr-2 text-secondary"></i>Password
+                    </label>
+                    <input type="password" id="password"
+                        class="w-full bg-gray-800/50 border-2 border-gray-700 rounded-lg p-4 text-white focus:outline-none focus:border-secondary transition placeholder-gray-500"
+                        placeholder="••••••••" required>
+                </div>
+                <div id="error-message" class="hidden p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-300 text-sm"></div>
+                <button type="submit"
+                    class="w-full bg-gradient-to-r from-secondary to-teal-600 hover:from-green-600 hover:to-teal-700 text-white font-bold py-4 rounded-lg transition transform hover:scale-105 shadow-lg">
+                    <i class="fa-solid fa-rocket mr-2"></i>Get Started
+                </button>
+                <p class="text-center text-gray-300 text-sm">
+                    Already have an account? <a href="/login" class="text-secondary hover:underline font-semibold">Login</a>
+                </p>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const errorMsg = document.getElementById('error-message');
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+
+        errorMsg.classList.add('hidden');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Creating account...';
+
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                alert('✅ Registration successful! Please login.');
+                window.location.href = '/login';
+            } else {
+                errorMsg.textContent = data.msg || 'Registration failed';
+                errorMsg.classList.remove('hidden');
+            }
+        } catch (err) {
+            console.error(err);
+            errorMsg.textContent = 'Network error. Please check your connection and try again.';
+            errorMsg.classList.remove('hidden');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-rocket mr-2"></i>Get Started';
+        }
+    });
+</script>
+{% endblock %}

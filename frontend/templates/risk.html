@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.3\'%3E%3Cpath d=\'M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20H0v-2h20v2H0v2h20v2H0v2h20v2H0v2h20v2H0v2h22V20H20zm-2 2h2v2h-2v-2zm0-4h2v2h-2v-2zm0-4h2v2h-2v-2zm0-4h2v2h-2v-2z\'/%3E%3C/g%3E%3C/svg%3E');"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 relative z-10">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4 gradient-text">
+                    <i class="fa-solid fa-shield-halved mr-3"></i>Health Risk Score
+                </h1>
+                <p class="text-gray-300 text-lg">Automatically calculated based on your health data</p>
+            </div>
+
+            <!-- Main Risk Display -->
+            <div class="glass-card p-8 mb-6 shadow-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-white">Your Risk Assessment</h2>
+                    <a href="/vitals" class="px-4 py-2 bg-primary hover:bg-indigo-600 rounded-lg text-white font-semibold transition transform hover:scale-105">
+                        <i class="fa-solid fa-edit mr-2"></i>Edit Vitals
+                    </a>
+                </div>
+
+                <!-- Risk Score Gauge -->
+                <div class="flex flex-col md:flex-row items-center justify-center gap-8 mb-8">
+                    <!-- Circular Progress -->
+                    <div class="relative w-64 h-64">
+                        <svg class="transform -rotate-90 w-full h-full">
+                            <circle cx="128" cy="128" r="88" stroke="rgba(255,255,255,0.1)" stroke-width="16" fill="none"/>
+                            <circle id="risk-circle" cx="128" cy="128" r="88" stroke="#10B981" stroke-width="16" 
+                                fill="none" stroke-dasharray="552" stroke-dashoffset="552" 
+                                stroke-linecap="round" class="transition-all duration-1000"/>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <div id="risk-score-value" class="text-6xl font-bold text-white mb-2">0</div>
+                            <div class="text-gray-400 text-sm">Risk Score</div>
+                            <div id="risk-level-text" class="text-2xl font-bold text-green-500 mt-4">Low Risk</div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="flex-1 max-w-md">
+                        <div class="mb-4">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-300 font-semibold">Risk Level</span>
+                                <span id="risk-percentage" class="text-gray-300">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-800 rounded-full h-8 overflow-hidden">
+                                <div id="risk-progress-bar" class="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 transition-all duration-1000" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                            <div class="p-2 bg-green-500/20 rounded">
+                                <div class="font-bold text-green-400">Low</div>
+                                <div class="text-gray-400">0-30</div>
+                            </div>
+                            <div class="p-2 bg-yellow-500/20 rounded">
+                                <div class="font-bold text-yellow-400">Moderate</div>
+                                <div class="text-gray-400">31-60</div>
+                            </div>
+                            <div class="p-2 bg-red-500/20 rounded">
+                                <div class="font-bold text-red-400">High</div>
+                                <div class="text-gray-400">61-100</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Risk Factors -->
+                <div id="risk-factors-container" class="mt-8">
+                    <h3 class="text-xl font-bold mb-4 text-white">
+                        <i class="fa-solid fa-list-check mr-2"></i>Contributing Factors
+                    </h3>
+                    <ul id="risk-factors-list" class="space-y-2">
+                        <!-- Factors will be populated by JS -->
+                    </ul>
+                </div>
+
+                <!-- Trend Indicators -->
+                <div id="trend-indicators-container" class="mt-6 hidden">
+                    <h3 class="text-xl font-bold mb-4 text-white">
+                        <i class="fa-solid fa-chart-line mr-2"></i>Trend Indicators
+                    </h3>
+                    <div id="trend-indicators-list" class="flex flex-wrap gap-2">
+                        <!-- Trend indicators will be populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Risk Probabilities -->
+                <div id="risk-probabilities-container" class="mt-6 hidden">
+                    <h3 class="text-xl font-bold mb-4 text-white">
+                        <i class="fa-solid fa-percent mr-2"></i>Risk Probabilities
+                    </h3>
+                    <div id="risk-probabilities-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Probabilities will be populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <a href="/insights" class="glass-card p-6 hover:bg-white/5 transition cursor-pointer group">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-white mb-2 group-hover:text-primary transition">
+                                <i class="fa-solid fa-brain mr-2"></i>AI Insights
+                            </h3>
+                            <p class="text-gray-400">Get detailed AI-powered health analysis</p>
+                        </div>
+                        <i class="fa-solid fa-arrow-right text-2xl text-gray-400 group-hover:text-primary transition"></i>
+                    </div>
+                </a>
+
+                <a href="/alerts" class="glass-card p-6 hover:bg-white/5 transition cursor-pointer group">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-white mb-2 group-hover:text-primary transition">
+                                <i class="fa-solid fa-bell mr-2"></i>Alerts & Notifications
+                            </h3>
+                            <p class="text-gray-400">Manage your health alerts</p>
+                        </div>
+                        <i class="fa-solid fa-arrow-right text-2xl text-gray-400 group-hover:text-primary transition"></i>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const state = {
+    token: localStorage.getItem('token')
+};
+
+if (!state.token) {
+    window.location.href = '/login';
+}
+
+// Calculate and display risk score
+async function calculateRisk() {
+    try {
+        const res = await fetch('/api/health/risk', {
+            headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        const data = await res.json();
+
+        // Update score
+        const scoreEl = document.getElementById('risk-score-value');
+        const levelEl = document.getElementById('risk-level-text');
+        const circle = document.getElementById('risk-circle');
+        const progressBar = document.getElementById('risk-progress-bar');
+        const percentageEl = document.getElementById('risk-percentage');
+
+        // Animate score
+        animateValue(scoreEl, 0, data.score, 1000);
+        percentageEl.textContent = data.score + '%';
+        progressBar.style.width = data.score + '%';
+
+        // Update circle (circumference = 2 * π * r = 2 * 3.14159 * 88 ≈ 552)
+        const offset = 552 - (552 * data.score / 100);
+        circle.style.strokeDashoffset = offset;
+
+        // Update colors based on risk level
+        let color = '#10B981'; // green
+        let textColor = 'text-green-500';
+        if (data.score > 60) {
+            color = '#EF4444'; // red
+            textColor = 'text-red-500';
+        } else if (data.score > 30) {
+            color = '#EAB308'; // yellow
+            textColor = 'text-yellow-500';
+        }
+
+        circle.style.stroke = color;
+        levelEl.className = `text-2xl font-bold ${textColor} mt-4`;
+        levelEl.textContent = data.level + " Risk";
+
+        // Update factors
+        const factorsList = document.getElementById('risk-factors-list');
+        const factorsContainer = document.getElementById('risk-factors-container');
+        if (data.factors && data.factors.length > 0) {
+            factorsContainer.classList.remove('hidden');
+            factorsList.innerHTML = '';
+            data.factors.forEach(factor => {
+                const li = document.createElement('li');
+                li.className = 'glass-card p-3 flex items-center';
+                li.innerHTML = `<i class="fa-solid fa-exclamation-triangle text-yellow-400 mr-3"></i><span class="text-gray-300">${factor}</span>`;
+                factorsList.appendChild(li);
+            });
+        } else {
+            factorsContainer.classList.add('hidden');
+        }
+
+        // Update trend indicators
+        if (data.trend_indicators && data.trend_indicators.length > 0) {
+            const trendContainer = document.getElementById('trend-indicators-container');
+            const trendList = document.getElementById('trend-indicators-list');
+            trendContainer.classList.remove('hidden');
+            trendList.innerHTML = '';
+            data.trend_indicators.forEach(trend => {
+                const badge = document.createElement('div');
+                badge.className = 'px-4 py-2 bg-yellow-500/20 border border-yellow-500/50 rounded-full text-yellow-400 text-sm';
+                badge.textContent = trend;
+                trendList.appendChild(badge);
+            });
+        }
+
+        // Update risk probabilities
+        if (data.risk_probabilities && Object.keys(data.risk_probabilities).length > 0) {
+            const probContainer = document.getElementById('risk-probabilities-container');
+            const probGrid = document.getElementById('risk-probabilities-grid');
+            probContainer.classList.remove('hidden');
+            probGrid.innerHTML = '';
+            
+            Object.entries(data.risk_probabilities).forEach(([key, value]) => {
+                const prob = Math.round(value * 100);
+                const card = document.createElement('div');
+                card.className = 'glass-card p-4 text-center';
+                card.innerHTML = `
+                    <div class="text-gray-400 text-sm mb-2 capitalize">${key.replace('_', ' ')}</div>
+                    <div class="text-3xl font-bold text-white">${prob}%</div>
+                `;
+                probGrid.appendChild(card);
+            });
+        }
+
+    } catch (err) {
+        console.error('Failed to calculate risk:', err);
+    }
+}
+
+function animateValue(element, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        element.textContent = Math.floor(progress * (end - start) + start);
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
+// Load risk score on page load
+document.addEventListener('DOMContentLoaded', () => {
+    calculateRisk();
+    // Refresh every 30 seconds if data changes
+    setInterval(calculateRisk, 30000);
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold mb-8 gradient-text">
+            <i class="fa-solid fa-bell mr-3"></i>Health Alerts
+        </h1>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Alert Configuration -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Config Card -->
+                <div class="glass-card p-6">
+                    <h2 class="text-xl font-bold text-white mb-4">Configuration</h2>
+                    <form id="alert-config-form" class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-300">Automatic AI Alerts</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" checked class="sr-only peer">
+                                <div
+                                    class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600">
+                                </div>
+                            </label>
+                        </div>
+                        <div class="border-t border-white/5 pt-4">
+                            <h3 class="text-sm font-semibold text-slate-400 mb-3 uppercase">Custom Thresholds</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-xs text-slate-500">Max Heart Rate</label>
+                                    <input type="number" value="100"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-500">Max Blood Sugar</label>
+                                    <input type="number" value="140"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
+                                </div>
+                            </div>
+                            <button type="button"
+                                class="mt-4 w-full py-2 bg-indigo-500/20 text-indigo-300 rounded hover:bg-indigo-500/30 transition text-sm font-semibold">
+                                Save Thresholds
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Manual Alert Creation -->
+                <div class="glass-card p-6">
+                    <h2 class="text-xl font-bold text-white mb-4">Add Custom Alert</h2>
+                    <form id="manual-alert-form" class="space-y-4">
+                        <div>
+                            <label class="text-slate-400 text-sm">Alert Description</label>
+                            <textarea id="m-desc" required
+                                class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm focus:border-indigo-500 transition"
+                                placeholder="e.g. Take Vitamins"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-slate-400 text-sm">Severity</label>
+                            <select id="m-severity"
+                                class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm">
+                                <option value="warning">Warning (Yellow)</option>
+                                <option value="critical">Critical (Red)</option>
+                                <option value="info">Info (Blue)</option>
+                            </select>
+                        </div>
+                        <button type="submit"
+                            class="w-full py-2 bg-pink-500/20 text-pink-300 rounded hover:bg-pink-500/30 transition text-sm font-semibold">
+                            Create Alert
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Alerts List -->
+            <div class="lg:col-span-2">
+                <div class="glass-card p-6 min-h-[500px]">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-white">Recent Notifications</h2>
+                        <button class="text-sm text-slate-400 hover:text-white transition">Mark all read</button>
+                    </div>
+
+                    <div id="alerts-list" class="space-y-4">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login';
+
+    document.addEventListener('DOMContentLoaded', loadAlerts);
+
+    document.getElementById('manual-alert-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        btn.disabled = true;
+
+        try {
+            const desc = document.getElementById('m-desc').value;
+            const severity = document.getElementById('m-severity').value;
+
+            const res = await fetch('/api/alerts/manual', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ alert_text: desc, severity })
+            });
+
+            if (res.ok) {
+                document.getElementById('manual-alert-form').reset();
+                loadAlerts(); // Refresh list
+            } else {
+                alert('Failed to create alert');
+            }
+        } catch (err) { console.error(err); }
+        finally { btn.disabled = false; }
+    });
+
+    async function loadAlerts() {
+        try {
+            const res = await fetch('/api/alerts/', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            const list = document.getElementById('alerts-list');
+            list.innerHTML = '';
+
+            const all = [...(data.unread || []), ...(data.read || [])];
+
+            if (all.length === 0) {
+                list.innerHTML = '<p class="text-slate-500 text-center py-4">No alerts found.</p>';
+                return;
+            }
+
+            all.forEach(a => {
+                const color = a.severity === 'critical' ? 'rose' : (a.severity === 'info' ? 'blue' : 'yellow');
+                const icon = a.severity === 'critical' ? 'triangle-exclamation' : 'info-circle';
+
+                const div = document.createElement('div');
+                div.className = `p-4 rounded-xl bg-${color}-500/10 border border-${color}-500/20 flex items-start gap-4`;
+
+                // Handle potentially different alert structures (string vs object vs list)
+                let msg = "Alert";
+                if (Array.isArray(a.alerts)) msg = a.alerts.join(', ');
+                else if (typeof a.alerts === 'string') msg = a.alerts;
+
+                div.innerHTML = `
+                 <div class="mt-1"><i class="fa-solid fa-${icon} text-${color}-500"></i></div>
+                 <div>
+                    <h4 class="text-white font-semibold capitalize">${a.type || 'System'} Alert</h4>
+                    <p class="text-slate-400 text-sm mt-1">${msg}</p>
+                    <p class="text-slate-500 text-xs mt-2">${new Date(a.timestamp).toLocaleString()}</p>
+                 </div>
+            `;
+                list.appendChild(div);
+            });
+
+        } catch (err) { console.error(err); }
+    }
+</script>
+{% endblock %}
