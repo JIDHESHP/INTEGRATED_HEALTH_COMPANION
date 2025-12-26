@@ -168,7 +168,7 @@ The Smart Wellness Management System is a **user-centric health companion** that
 git clone https://github.com/JIDHESHP/INTEGRATED_HEALTH_COMPANION/
 cd INTEGRATED_HEALTH_COMPANION
 ```
-### Step 2: Run the Application
+### Step 2: Install Dependencies
 
 ```bash
 pip install flask flask-jwt-extended pymongo flask-cors python-dotenv requests
