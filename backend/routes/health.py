@@ -6,18 +6,29 @@ import datetime
 
 health_bp = Blueprint('health', __name__)
 
+import os
+from werkzeug.utils import secure_filename
+from flask import current_app
+
 @health_bp.route('/log', methods=['POST'])
 @jwt_required()
 def log_health_data():
     user_id = get_jwt_identity()
-    data = request.get_json()
+    
+    # Handle both JSON and Multipart/Form-Data
+    if request.content_type and 'multipart/form-data' in request.content_type:
+        data = request.form
+        image_file = request.files.get('image')
+    else:
+        data = request.get_json() or {}
+        image_file = None
     
     # Helper to clean input
     def clean_input(val):
         if val is None: return None
         if isinstance(val, str):
             val = val.strip()
-            if val == '': return None
+            if val == '' or val.lower() == 'null': return None
             # Allow generic casting
             try:
                 return int(val)
@@ -50,41 +61,66 @@ def log_health_data():
         print(f"Validation Error: {e}")
         return jsonify({"msg": "Invalid input formatting."}), 400
     
-    # Expected: heart_rate, bp_systolic, bp_diastolic, blood_sugar
+    # Handle Image Upload
+    image_path = None
+    if image_file and image_file.filename:
+        try:
+            filename = secure_filename(f"{user_id}_{datetime.datetime.utcnow().timestamp()}_{image_file.filename}")
+            # Ensure upload directory exists
+            upload_dir = os.path.join(current_app.static_folder, 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            save_path = os.path.join(upload_dir, filename)
+            image_file.save(save_path)
+            
+            # Save relative path for frontend access
+            image_path = f"uploads/{filename}" 
+        except Exception as e:
+            print(f"Image Save Error: {e}")
+            # Continue without image if it fails (optional decision)
+    
+    # Expected: heart_rate, bp_systolic, bp_diastolic, blood_sugar, image_path
     entry = {
         "user_id": user_id,
         "timestamp": datetime.datetime.utcnow(),
         "heart_rate": heart_rate,
         "bp_systolic": bp_systolic,
         "bp_diastolic": bp_diastolic,
-        "blood_sugar": blood_sugar
+        "blood_sugar": blood_sugar,
+        "image_path": image_path
     }
     
     db = get_db()
     
+    # Create a copy for latest_vitals BEFORE inserting to logs (which adds _id)
+    latest_entry_base = entry.copy()
+
     try:
         db.health_logs.insert_one(entry)
     except Exception as e:
          print(f"Mongo Insert Error: {e}")
          return jsonify({"msg": "Database insert error"}), 500
     
-    # Update latest vitals - explicit Find/Update/Insert to avoid upsert Check/Write errors
+    # Update latest vitals - use the clean copy
     try:
-        existing_latest = db.latest_vitals.find_one({"user_id": user_id})
+        # Ensure we don't try to set _id in the update
+        if '_id' in latest_entry_base:
+            del latest_entry_base['_id']
+            
         latest_entry_data = {
-            **entry,
+            **latest_entry_base,
             "updated_at": datetime.datetime.utcnow()
         }
         
-        if existing_latest:
-            # Update
-            db.latest_vitals.update_one(
-                {"_id": existing_latest["_id"]},
-                {"$set": latest_entry_data}
-            )
-        else:
-            # Insert
-            db.latest_vitals.insert_one(latest_entry_data)
+        db.latest_vitals.update_one(
+            {"user_id": user_id},
+            {"$set": latest_entry_data},
+            upsert=True
+        )
+            
+    except Exception as e:
+        print(f"Error updating latest_vitals: {e}")
+        # We don't block the request if this fails, but we assume the log was inserted.
             
     except Exception as e:
         print(f"Error updating latest_vitals: {e}")
@@ -137,7 +173,14 @@ def log_health_data():
 def get_logs():
     user_id = get_jwt_identity()
     db = get_db()
-    logs = list(db.health_logs.find({"user_id": user_id}).sort("timestamp", -1).limit(50))
+    
+    # Get limit param
+    try:
+        limit = int(request.args.get('limit', 50))
+    except ValueError:
+        limit = 50
+        
+    logs = list(db.health_logs.find({"user_id": user_id}).sort("timestamp", -1).limit(limit))
     for log in logs:
         log['_id'] = str(log['_id'])
         if 'timestamp' in log and isinstance(log['timestamp'], datetime.datetime):

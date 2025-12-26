@@ -1,0 +1,10 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# MongoDB local files
+mongo_data/
+
+# Virtual env & secrets
+venv/
+.env

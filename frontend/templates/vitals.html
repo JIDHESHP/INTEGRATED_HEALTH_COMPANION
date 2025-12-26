@@ -30,7 +30,7 @@
                 </div>
             </div>
 
-            <form id="vitals-form" class="space-y-8">
+            <form id="vitals-form" class="space-y-8" enctype="multipart/form-data">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <!-- Heart Rate -->
                     <div class="relative group">
@@ -86,6 +86,21 @@
                     </div>
                 </div>
 
+                <!-- Image Upload -->
+                <div class="relative group">
+                    <label class="block text-slate-300 mb-3 font-semibold text-sm uppercase tracking-wide">
+                        <i class="fa-solid fa-image text-purple-500 mr-2"></i>Attach Image (Optional)
+                    </label>
+                    <input type="file" id="image-upload" name="image" accept="image/*" class="block w-full text-sm text-slate-400
+                                file:mr-4 file:py-2.5 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-indigo-500/10 file:text-indigo-400
+                                hover:file:bg-indigo-500/20 transition cursor-pointer
+                                border border-white/10 rounded-xl p-2 bg-slate-900/50">
+                    <p class="text-xs text-slate-500 mt-2 pl-1">Upload reports or health indicators.</p>
+                </div>
+
                 <!-- Action Buttons -->
                 <div class="flex gap-4 pt-6">
                     <button type="submit"
@@ -115,7 +130,7 @@
         </div>
 
         <!-- Latest Entry Display -->
-        <div id="latest-entry" class="glass-card p-8 hidden opacity-0 transition-opacity duration-300">
+        <div id="latest-entry" class="glass-card p-8 hidden opacity-0 transition-opacity duration-300 mb-8">
             <h3 class="text-xl font-bold mb-6 text-white flex items-center">
                 <i class="fa-solid fa-clock-rotate-left mr-3 text-slate-400"></i>Latest Recorded Entry
             </h3>
@@ -138,6 +153,30 @@
                 </div>
             </div>
         </div>
+
+        <!-- Recent Entries List (Last 5) -->
+        <div id="recent-entries" class="glass-card p-8 hidden opacity-0 transition-opacity duration-300">
+            <h3 class="text-xl font-bold mb-6 text-white flex items-center">
+                <i class="fa-solid fa-list-ul mr-3 text-slate-400"></i>Recent Activity <span
+                    class="text-sm font-normal text-slate-500 ml-2">(Last 5 Entries)</span>
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-slate-300">
+                    <thead class="bg-white/5 text-slate-400 uppercase text-xs">
+                        <tr>
+                            <th class="p-4 rounded-tl-lg">Date & Time</th>
+                            <th class="p-4">Heart Rate</th>
+                            <th class="p-4">BP</th>
+                            <th class="p-4">Sugar</th>
+                            <th class="p-4 rounded-tr-lg">Image</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-entries-body" class="divide-y divide-white/5">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -152,6 +191,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         loadLatestEntryDisplayOnly();
+        loadRecentEntries();
     });
 
     function resetForNewEntry() {
@@ -176,28 +216,21 @@
             return;
         }
 
-        const data = {};
-        if (heartRate) data.heart_rate = parseInt(heartRate);
-        if (bpSystolic) data.bp_systolic = parseInt(bpSystolic);
-        if (bpDiastolic) data.bp_diastolic = parseInt(bpDiastolic);
-        if (bloodSugar) data.blood_sugar = parseInt(bloodSugar);
-
         const submitBtn = e.target.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn.innerHTML;
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Saving...';
 
         try {
+            // Note: We do NOT set Content-Type header manually for FormData; browser handles it
             const res = await fetch('/api/health/log', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${state.token}`
                 },
-                body: JSON.stringify(data)
+                body: formData
             });
 
-            // Improved error handling
             const text = await res.text();
             let result;
             try {
@@ -216,6 +249,7 @@
                 }
 
                 loadLatestEntryDisplayOnly();
+                loadRecentEntries(); // Refresh list
                 setTimeout(() => successMsg.classList.add('hidden'), 5000);
                 document.getElementById('vitals-form').reset();
 
@@ -261,7 +295,7 @@
             const data = await res.json();
 
             const latestDiv = document.getElementById('latest-entry');
-            if (data && (data.heart_rate || data.bp_systolic)) {
+            if (data && (data.heart_rate || data.bp_systolic || data.blood_sugar)) {
                 latestDiv.classList.remove('hidden');
                 setTimeout(() => latestDiv.classList.remove('opacity-0'), 100);
 
@@ -269,12 +303,68 @@
                 document.getElementById('latest-bp').textContent = `${data.bp_systolic || '--'}/${data.bp_diastolic || '--'}`;
                 document.getElementById('latest-sugar').textContent = (data.blood_sugar || '--') + ' mg/dL';
 
-                if (data.updated_at) {
-                    const date = new Date(data.updated_at);
+                if (data.updated_at || data.timestamp) {
+                    const date = new Date(data.updated_at || data.timestamp + 'Z'); // Ensure UTC parsing
                     document.getElementById('latest-date').textContent = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 }
             }
         } catch (err) { console.error(err); }
+    }
+
+    async function loadRecentEntries() {
+        try {
+            const res = await fetch('/api/health/logs?limit=5', {
+                headers: { 'Authorization': `Bearer ${state.token}` }
+            });
+            const logs = await res.json();
+
+            const recentDiv = document.getElementById('recent-entries');
+            const tbody = document.getElementById('recent-entries-body');
+            tbody.innerHTML = ''; // Clear
+
+            if (logs && logs.length > 0) {
+                recentDiv.classList.remove('hidden');
+                setTimeout(() => recentDiv.classList.remove('opacity-0'), 100);
+
+                logs.forEach(log => {
+                    // Try to parse timestamp, handle both isoformat and others
+                    let date;
+                    if (log.timestamp) {
+                        if (log.timestamp.endsWith('Z')) {
+                            date = new Date(log.timestamp);
+                        } else {
+                            // Assume UTC if not specified
+                            date = new Date(log.timestamp + 'Z');
+                        }
+                    } else {
+                        date = new Date(); // fallback
+                    }
+
+                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    let imageHtml = '<span class="text-slate-600">-</span>';
+                    if (log.image_path) {
+                        imageHtml = `<a href="/static/${log.image_path}" target="_blank" class="text-indigo-400 hover:text-indigo-300 transition"><i class="fa-solid fa-image mr-1"></i> View</a>`;
+                    }
+
+                    const row = `
+                        <tr class="hover:bg-white/5 transition">
+                            <td class="p-4 font-medium text-slate-200">${dateStr}</td>
+                            <td class="p-4 text-rose-300 font-semibold">${log.heart_rate || '--'} <span class="text-xs text-slate-500 font-normal">bpm</span></td>
+                            <td class="p-4 text-blue-300 font-semibold">${log.bp_systolic || '--'}/${log.bp_diastolic || '--'}</td>
+                            <td class="p-4 text-emerald-300 font-semibold">${log.blood_sugar || '--'} <span class="text-xs text-slate-500 font-normal">mg/dL</span></td>
+                            <td class="p-4">${imageHtml}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } else {
+                // Show empty state if needed, or helper text
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">No recent entries found.</td></tr>';
+                recentDiv.classList.remove('hidden');
+                recentDiv.classList.remove('opacity-0');
+            }
+        } catch (err) { console.error("Recent entries error:", err); }
     }
 
     function clearForm() {
