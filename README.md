@@ -165,7 +165,7 @@ The Smart Wellness Management System is a **user-centric health companion** that
 ### Step 1: Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/JIDHESHP/INTEGRATED_HEALTH_COMPANION/
 cd smart_wellness_system
 ```
 
