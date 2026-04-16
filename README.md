@@ -2,8 +2,7 @@
 
 ### A Real-Time, Personalized Health Monitoring Web Application
 
-A modern, real-time web application that monitors user health data, manages daily wellness routines, detects abnormal conditions, and provides personalized alerts using user-provided data stored securely in a database.
-
+A modern, real-time web application that monitors user health data, manages daily wellness routines, detects abnormal conditions, and provides personalized alerts using user-
 ---
 
 ## 📌 Problem Statement
